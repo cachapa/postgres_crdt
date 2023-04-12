@@ -1,3 +1,7 @@
+## 0.0.9+2
+
+- Some more docs
+
 ## 0.0.9+1
 
 - Add documentation

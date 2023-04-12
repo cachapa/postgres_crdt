@@ -10,6 +10,7 @@ export 'package:sql_crdt/sql_crdt.dart';
 class PostgresCrdt {
   PostgresCrdt._();
 
+  /// Open a database connection as a SqlCrdt instance.
   static Future<SqlCrdt> open(
     String databaseName, {
     String host = 'localhost',
