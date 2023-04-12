@@ -1,4 +1,4 @@
-name: Publish [Postgres]
+name: Publish to pub.dev
 
 on:
   push:
