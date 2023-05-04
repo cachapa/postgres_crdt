@@ -1,3 +1,8 @@
+## 1.0.0
+
+- Breaking: use boolean type for is_deleted column
+- Make SqlCrdt abstract
+
 ## 0.0.9+2
 
 - Some more docs

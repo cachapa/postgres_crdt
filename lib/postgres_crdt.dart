@@ -7,11 +7,11 @@ import 'src/postgres_api.dart';
 
 export 'package:sql_crdt/sql_crdt.dart';
 
-class PostgresCrdt {
-  PostgresCrdt._();
+class PostgresCrdt extends SqlCrdt {
+  PostgresCrdt._(PostgresApi db) : super(db);
 
   /// Open a database connection as a SqlCrdt instance.
-  static Future<SqlCrdt> open(
+  static Future<PostgresCrdt> open(
     String databaseName, {
     String host = 'localhost',
     int port = 5432,
@@ -22,6 +22,8 @@ class PostgresCrdt {
         username: username, password: password);
     await db.open();
 
-    return SqlCrdt.open(PostgresApi(db));
+    final crdt = PostgresCrdt._(PostgresApi(db));
+    await crdt.init();
+    return crdt;
   }
 }

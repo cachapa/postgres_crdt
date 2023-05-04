@@ -47,14 +47,15 @@ Future<void> main() async {
 
   // Perhaps a better query would be
   final betterResult =
-      await crdt.query('SELECT id, name FROM users WHERE is_deleted = 0');
-  printRecords('SELECT id, name FROM users WHERE is_deleted = 0', betterResult);
+      await crdt.query('SELECT id, name FROM users WHERE is_deleted = false');
+  printRecords(
+      'SELECT id, name FROM users WHERE is_deleted = false', betterResult);
 
   // We can also watch for results to a specific query, but be aware that this
   // can be inefficient since it reruns watched queries on every database change
-  crdt.watch('SELECT id, name FROM users WHERE is_deleted = 0').listen((e) =>
-      printRecords(
-          'Watch: SELECT id, name FROM users WHERE is_deleted = 0', e));
+  crdt.watch('SELECT id, name FROM users WHERE is_deleted = false').listen(
+      (e) => printRecords(
+          'Watch: SELECT id, name FROM users WHERE is_deleted = false', e));
 
   // Update the database
   await crdt.execute('''
