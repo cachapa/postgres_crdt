@@ -47,15 +47,14 @@ Future<void> main() async {
 
   // Perhaps a better query would be
   final betterResult =
-      await crdt.query('SELECT id, name FROM users WHERE is_deleted = false');
-  printRecords(
-      'SELECT id, name FROM users WHERE is_deleted = false', betterResult);
+      await crdt.query('SELECT id, name FROM users WHERE is_deleted = 0');
+  printRecords('SELECT id, name FROM users WHERE is_deleted = 0', betterResult);
 
   // We can also watch for results to a specific query, but be aware that this
   // can be inefficient since it reruns watched queries on every database change
-  crdt.watch('SELECT id, name FROM users WHERE is_deleted = false').listen(
-      (e) => printRecords(
-          'Watch: SELECT id, name FROM users WHERE is_deleted = false', e));
+  crdt.watch('SELECT id, name FROM users WHERE is_deleted = 0').listen((e) =>
+      printRecords(
+          'Watch: SELECT id, name FROM users WHERE is_deleted = 0', e));
 
   // Update the database
   await crdt.execute('''
@@ -67,7 +66,7 @@ Future<void> main() async {
   await crdt.execute('''
     UPDATE users SET is_deleted = ?1
     WHERE id = ?2
-  ''', [false, 1]);
+  ''', [0, 1]);
 
   // Perform multiple writes inside a transaction so they get the same timestamp
   await crdt.transaction((txn) async {

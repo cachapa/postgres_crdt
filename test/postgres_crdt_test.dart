@@ -87,7 +87,7 @@ Future<void> main() async {
       ''', [1]);
       final result = await crdt.query('SELECT * FROM users');
       expect(result.first['name'], 'John Doe');
-      expect(result.first['is_deleted'], true);
+      expect(result.first['is_deleted'], 1);
     });
 
     test('Transaction', () async {
@@ -183,7 +183,7 @@ Future<void> main() async {
     test('Emit on delete', () async {
       await _insertUser(crdt, 1, 'John Doe');
       final streamTest = expectLater(
-        crdt.watch('SELECT * FROM users WHERE is_deleted = false'),
+        crdt.watch('SELECT * FROM users WHERE is_deleted = 0'),
         emitsInOrder([
           (List<Map<String, Object?>> e) => e.first['name'] == 'John Doe',
           [],
