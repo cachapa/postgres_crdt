@@ -317,10 +317,10 @@ packages:
     dependency: "direct main"
     description:
       name: sql_crdt
-      sha256: e07c1d02a46727d8b7876b95d2ce24ffc69aa8e9e260f18b1b173bccfe6ab07a
+      sha256: f64190be49a2c9e5105536e2c9d139fb40c803616639e00813dbf05b49388196
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.1"
+    version: "1.1.1+1"
   sqlparser:
     dependency: transitive
     description:
