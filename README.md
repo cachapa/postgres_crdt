@@ -16,8 +16,8 @@ This package uses [postgres](https://pub.dev/packages/postgres) and requires a w
 
 ## Usage
 
-Check [example.dart](https://github.com/cachapa/sql_crdt/blob/master/postgres_crdt/example/example.dart) for more details.
+Check [example.dart](https://github.com/cachapa/postgres_crdt/blob/master/example/example.dart) for more details.
 
 ## Features and bugs
 
-Please file feature requests and bugs in the [issue tracker](https://github.com/cachapa/sql_crdt/issues).
+Please file feature requests and bugs in the [issue tracker](https://github.com/cachapa/postgres_crdt/issues).

@@ -4,6 +4,7 @@ import 'package:test/test.dart';
 Future<void> main() async {
   final crdt = await PostgresCrdt.open(
     'testdb',
+    host: 'localhost',
     username: 'postgres',
     password: 'postgres',
   );
@@ -107,7 +108,7 @@ Future<void> main() async {
     });
 
     test('Merge', () async {
-      final hlc = Hlc.now('test_node_id').toString();
+      final hlc = Hlc.now('test_node_id');
       await crdt.merge({
         'users': [
           {
@@ -119,7 +120,7 @@ Future<void> main() async {
       });
       final result = await crdt.query('SELECT * FROM users');
       expect(result.first['name'], 'John Doe');
-      expect(result.first['hlc'], hlc);
+      expect(result.first['hlc'], hlc.toString());
       expect(result.first['node_id'], 'test_node_id');
     });
   });
@@ -222,7 +223,7 @@ Future<void> main() async {
           {
             'id': 1,
             'name': 'John Doe',
-            'hlc': Hlc.now('test_node_id').toString(),
+            'hlc': Hlc.now('test_node_id'),
           },
         ],
       });
