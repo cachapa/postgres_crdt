@@ -75,7 +75,7 @@
         <entry key="crdt">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/crdt-5.0.2/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/crdt-5.1.1/lib" />
             </list>
           </value>
         </entry>
@@ -292,7 +292,7 @@
         <entry key="sql_crdt">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.0.0/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.1.0/lib" />
             </list>
           </value>
         </entry>
@@ -421,7 +421,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/collection-1.18.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/convert-3.1.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/coverage-1.6.3/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/crdt-5.0.2/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/crdt-5.1.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/crypto-3.0.3/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/file-7.0.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/frontend_server_client-3.2.0/lib" />
@@ -452,7 +452,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/source_maps-0.10.12/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/source_span-1.10.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sprintf-7.0.0/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.0.0/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.1.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sqlparser-0.31.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/stack_trace-1.11.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/stream_channel-2.1.2/lib" />

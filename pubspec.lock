@@ -85,10 +85,10 @@ packages:
     dependency: transitive
     description:
       name: crdt
-      sha256: "9c1fef436600e80fc7e9e1668d822d0632ee3c277a49282e1eb0afb3a312f7fd"
+      sha256: "96c19779c611ca82b1bd5bfeaca1d148e55704153dd04e606eafed25e5f925b3"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.2"
+    version: "5.1.1"
   crypto:
     dependency: transitive
     description:
@@ -333,10 +333,10 @@ packages:
     dependency: "direct main"
     description:
       name: sql_crdt
-      sha256: "6d9af96ee8a45be252ad9fbff7aed785a61ab16862a47d187ca489bdeba060d4"
+      sha256: "7a485f74f65690c07d74294a9ae39765a7279830c7cacfbd01164dc74cc45ebd"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0"
+    version: "2.1.0"
   sqlparser:
     dependency: transitive
     description:
