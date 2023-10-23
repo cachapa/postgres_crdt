@@ -8,7 +8,7 @@ import 'src/postgres_api.dart';
 export 'package:sql_crdt/sql_crdt.dart';
 
 class PostgresCrdt extends SqlCrdt {
-  PostgresCrdt._(PostgresApi db) : super(db);
+  PostgresCrdt._(super.db);
 
   /// Open a database connection as a SqlCrdt instance.
   static Future<PostgresCrdt> open(

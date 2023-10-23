@@ -57,11 +57,33 @@ Future<void> main() async {
       expect(result.first['name'], 'John Doe');
     });
 
+    test('Insert without arguments', () async {
+      await crdt.execute('''
+        INSERT INTO users (id, name)
+        VALUES (1, 'John Doe')
+      ''');
+      final result = await crdt.query('SELECT * FROM users');
+      expect(result.first['name'], 'John Doe');
+    });
+
     test('Update', () async {
       await _insertUser(crdt, 1, 'John Doe');
       final insertHlc =
           (await crdt.query('SELECT hlc FROM users')).first['hlc'] as String;
       await _updateUser(crdt, 1, 'Jane Doe');
+      final result = await crdt.query('SELECT * FROM users');
+      expect(result.first['name'], 'Jane Doe');
+      expect((result.first['hlc'] as String).compareTo(insertHlc), 1);
+    });
+
+    test('Update without arguments', () async {
+      await _insertUser(crdt, 1, 'John Doe');
+      final insertHlc =
+          (await crdt.query('SELECT hlc FROM users')).first['hlc'] as String;
+      await crdt.execute('''
+        UPDATE users SET name = 'Jane Doe'
+        WHERE id = 1
+      ''');
       final result = await crdt.query('SELECT * FROM users');
       expect(result.first['name'], 'Jane Doe');
       expect((result.first['hlc'] as String).compareTo(insertHlc), 1);
@@ -80,12 +102,36 @@ Future<void> main() async {
       expect((result.first['hlc'] as String).compareTo(insertHlc), 1);
     });
 
+    test('Upsert without arguments', () async {
+      await _insertUser(crdt, 1, 'John Doe');
+      final insertHlc =
+          (await crdt.query('SELECT hlc FROM users')).first['hlc'] as String;
+      await crdt.execute('''
+        INSERT INTO users (id, name) VALUES (1, 'Jane Doe')
+        ON CONFLICT (id) DO UPDATE SET name = 'Jane Doe'
+      ''');
+      final result = await crdt.query('SELECT * FROM users');
+      expect(result.first['name'], 'Jane Doe');
+      expect((result.first['hlc'] as String).compareTo(insertHlc), 1);
+    });
+
     test('Delete', () async {
       await _insertUser(crdt, 1, 'John Doe');
       await crdt.execute('''
         DELETE FROM users
         WHERE id = ?1
       ''', [1]);
+      final result = await crdt.query('SELECT * FROM users');
+      expect(result.first['name'], 'John Doe');
+      expect(result.first['is_deleted'], 1);
+    });
+
+    test('Delete without arguments', () async {
+      await _insertUser(crdt, 1, 'John Doe');
+      await crdt.execute('''
+        DELETE FROM users
+        WHERE id = 1
+      ''');
       final result = await crdt.query('SELECT * FROM users');
       expect(result.first['name'], 'John Doe');
       expect(result.first['is_deleted'], 1);
@@ -122,15 +168,6 @@ Future<void> main() async {
       expect(result.first['name'], 'John Doe');
       expect(result.first['hlc'], hlc.toString());
       expect(result.first['node_id'], 'test_node_id');
-    });
-
-    test('Insert without arguments', () async {
-      await crdt.execute('''
-        INSERT INTO users (id, name)
-        VALUES (1, 'John Doe')
-      ''');
-      final result = await crdt.query('SELECT * FROM users');
-      expect(result.first['name'], 'John Doe');
     });
   });
 
