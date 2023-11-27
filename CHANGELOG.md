@@ -1,3 +1,9 @@
+## 2.1.5
+
+- Upgrade `postgres` package to 3.x
+- Add `maxConnectionTime` to mitigate upstream memory leak (default: 1 day)
+- Remove superfluous warnings
+
 ## 2.1.4
 
 - Fix failed inserts and updates with null argument lists

@@ -2,9 +2,9 @@ import 'package:postgres/postgres.dart';
 import 'package:sql_crdt/sql_crdt.dart';
 
 class PostgresApi extends DatabaseApi {
-  final PostgreSQLExecutionContext _db;
+  final Session _connection;
 
-  PostgresApi(this._db);
+  PostgresApi(this._connection);
 
   @override
   Future<Iterable<String>> getTables() async => (await query('''
@@ -24,31 +24,24 @@ class PostgresApi extends DatabaseApi {
       ''', [table])).map((e) => e['name'] as String);
 
   @override
-  Future<void> execute(String sql, [List<Object?>? args]) => _db.execute(
-        sql.replaceAll('?', '@'),
-        substitutionValues: args?.toArgsMap,
+  Future<void> execute(String sql, [List<Object?>? args]) =>
+      _connection.execute(
+        Sql.indexed(sql, substitution: '?'),
+        parameters: args,
+        ignoreRows: true,
       );
 
   @override
   Future<List<Map<String, Object?>>> query(String sql,
           [List<Object?>? args]) async =>
-      (await _db.query(
-        sql.replaceAll('?', '@'),
-        substitutionValues: args?.toArgsMap,
+      (await _connection.execute(
+        Sql.indexed(sql, substitution: '?'),
+        parameters: args,
       ))
           .map((e) => e.toColumnMap())
           .toList();
 
   @override
-  Future<void> transaction(Future<void> Function(DatabaseApi txn) action) {
-    assert(_db is PostgreSQLConnection,
-        'Cannot start a transaction within a transaction');
-    return (_db as PostgreSQLConnection)
-        .transaction((t) => action(PostgresApi(t)));
-  }
-}
-
-extension on List<Object?> {
-  Map<String, Object?> get toArgsMap =>
-      {for (var i = 0; i < length; i++) '${i + 1}': this[i]};
+  Future<void> transaction(Future<void> Function(DatabaseApi txn) action) =>
+      (_connection as SessionExecutor).runTx((t) => action(PostgresApi(t)));
 }

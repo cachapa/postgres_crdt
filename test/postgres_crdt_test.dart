@@ -7,6 +7,7 @@ Future<void> main() async {
     host: 'localhost',
     username: 'postgres',
     password: 'postgres',
+    sslMode: SslMode.disable,
   );
 
   group('Basic', () {
@@ -249,6 +250,7 @@ Future<void> main() async {
               e.first['name'] == 'John Doe' && e.last['name'] == 'Jane Doe',
         ]),
       );
+      await Future.delayed(Duration(milliseconds: 1));
       await crdt.transaction((txn) async {
         await _insertUser(txn, 1, 'John Doe');
         await _insertUser(txn, 2, 'Jane Doe');
@@ -264,6 +266,7 @@ Future<void> main() async {
           (List<Map<String, Object?>> e) => e.first['name'] == 'John Doe',
         ]),
       );
+      await Future.delayed(Duration(milliseconds: 1));
       await crdt.merge({
         'users': [
           {

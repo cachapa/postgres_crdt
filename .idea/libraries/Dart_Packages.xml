@@ -68,7 +68,7 @@
         <entry key="coverage">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/coverage-1.7.0/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/coverage-1.7.1/lib" />
             </list>
           </value>
         </entry>
@@ -208,7 +208,7 @@
         <entry key="postgres">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/postgres-2.6.3/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/postgres-3.0.1/lib" />
             </list>
           </value>
         </entry>
@@ -292,14 +292,14 @@
         <entry key="sql_crdt">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.1.4/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.1.5+1/lib" />
             </list>
           </value>
         </entry>
         <entry key="sqlparser">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/sqlparser-0.32.0/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/sqlparser-0.32.1/lib" />
             </list>
           </value>
         </entry>
@@ -334,7 +334,7 @@
         <entry key="test">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/test-1.24.8/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/test-1.24.9/lib" />
             </list>
           </value>
         </entry>
@@ -348,7 +348,7 @@
         <entry key="test_core">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/test_core-0.5.8/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/test_core-0.5.9/lib" />
             </list>
           </value>
         </entry>
@@ -369,14 +369,14 @@
         <entry key="uuid">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/uuid-4.1.0/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/uuid-4.2.1/lib" />
             </list>
           </value>
         </entry>
         <entry key="vm_service">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/vm_service-12.0.0/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/vm_service-13.0.0/lib" />
             </list>
           </value>
         </entry>
@@ -420,7 +420,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/charcode-1.3.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/collection-1.18.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/convert-3.1.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/coverage-1.7.0/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/coverage-1.7.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/crdt-5.1.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/crypto-3.0.3/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/file-7.0.0/lib" />
@@ -440,7 +440,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path-1.8.3/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/pedantic-1.11.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/pool-1.5.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/postgres-2.6.3/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/postgres-3.0.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/pub_semver-2.1.4/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sasl_scram-0.1.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/saslprep-1.0.2/lib" />
@@ -452,19 +452,19 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/source_maps-0.10.12/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/source_span-1.10.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sprintf-7.0.0/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.1.4/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sqlparser-0.32.0/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sql_crdt-2.1.5+1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/sqlparser-0.32.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/stack_trace-1.11.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/stream_channel-2.1.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/string_scanner-1.2.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/term_glyph-1.2.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test-1.24.8/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test-1.24.9/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test_api-0.6.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test_core-0.5.8/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test_core-0.5.9/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/typed_data-1.3.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/unorm_dart-0.2.0/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/uuid-4.1.0/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/vm_service-12.0.0/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/uuid-4.2.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/vm_service-13.0.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/watcher-1.1.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/web_socket_channel-2.4.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/webkit_inspection_protocol-1.2.1/lib" />
