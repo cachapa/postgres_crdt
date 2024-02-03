@@ -1,3 +1,7 @@
+## 2.1.5+1
+
+- Upgrade `postgres` package to fix connection leaks
+
 ## 2.1.5
 
 - Upgrade `postgres` package to 3.x
