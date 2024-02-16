@@ -341,18 +341,18 @@ packages:
     dependency: "direct main"
     description:
       name: sql_crdt
-      sha256: e226ec9c557402c1e749f16b1cc04f6a7cc6a74a7ba96e1501b108ead8a59680
+      sha256: "56394ac9c61e2ecd170d30df58e5350950811ee574094f9e59dff3debe8ffa52"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.5+1"
+    version: "2.1.7"
   sqlparser:
     dependency: transitive
     description:
       name: sqlparser
-      sha256: db6354e8ba71acc50bc4afeafff2a248710ae2c00c9412e2c8b796916d4b1c45
+      sha256: dc384bb1f56d1384ce078edb5ff8247976abdab79d0c83e437210c85f06ecb61
       url: "https://pub.dev"
     source: hosted
-    version: "0.32.1"
+    version: "0.34.0"
   stack_trace:
     dependency: transitive
     description:

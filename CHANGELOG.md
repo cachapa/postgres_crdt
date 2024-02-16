@@ -1,3 +1,7 @@
+## 2.1.7
+
+- Add support for inserts from select queries
+
 ## 2.1.5+1
 
 - Upgrade `postgres` package to fix connection leaks
