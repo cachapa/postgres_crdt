@@ -5,8 +5,8 @@ import 'package:sql_crdt/sql_crdt.dart';
 
 import 'src/postgres_api.dart';
 
-export 'package:sql_crdt/sql_crdt.dart';
 export 'package:postgres/postgres.dart' show SslMode;
+export 'package:sql_crdt/sql_crdt.dart';
 
 class PostgresCrdt extends SqlCrdt {
   PostgresCrdt._(super.db);
@@ -47,4 +47,20 @@ class PostgresCrdt extends SqlCrdt {
     await crdt.init();
     return crdt;
   }
+
+  @override
+  Future<Iterable<String>> getTables() async => (await query('''
+    SELECT table_name FROM information_schema.tables
+    WHERE table_type='BASE TABLE' AND table_schema='public'
+  ''')).map((e) => e['table_name'] as String?).whereType<String>();
+
+  @override
+  Future<Iterable<String>> getTableKeys(String table) async => (await query('''
+    SELECT a.attname AS name
+    FROM
+      pg_class AS c
+      JOIN pg_index AS i ON c.oid = i.indrelid AND i.indisprimary
+      JOIN pg_attribute AS a ON c.oid = a.attrelid AND a.attnum = ANY(i.indkey)
+    WHERE c.oid = ?1::regclass
+  ''', [table])).map((e) => e['name'] as String);
 }
