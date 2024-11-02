@@ -1,6 +1,6 @@
 name: postgres_crdt
 description: Dart implementation of Conflict-free Replicated Data Types (CRDTs) using PostgreSQL
-version: 3.0.1
+version: 3.0.2
 homepage: https://github.com/cachapa/postgres_crdt
 repository: https://github.com/cachapa/postgres_crdt
 issue_tracker: https://github.com/cachapa/postgres_crdt/issues
@@ -9,8 +9,8 @@ environment:
   sdk: ^3.0.0
 
 dependencies:
-  postgres: ^3.1.2
-  sql_crdt: ^3.0.1
+  postgres: ^3.4.1
+  sql_crdt: ^3.0.2
 #    path: ../sql_crdt
 
 dev_dependencies:

@@ -1,5 +1,3 @@
-library postgres_crdt;
-
 import 'package:postgres/postgres.dart';
 import 'package:sql_crdt/sql_crdt.dart';
 

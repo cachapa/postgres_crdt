@@ -85,10 +85,10 @@ packages:
     dependency: transitive
     description:
       name: crdt
-      sha256: "07519c8141036fb6b724399dc62dec0ecf4987c2194aa84b9e080d3a6417251e"
+      sha256: "5709bbb4bb6f1b7e08fa1a3896070adec870ed4029c5b5da6fb30fa3c501cb65"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.2"
+    version: "5.1.3"
   crypto:
     dependency: transitive
     description:
@@ -245,10 +245,10 @@ packages:
     dependency: "direct main"
     description:
       name: postgres
-      sha256: "69c93e9a7c69033eab766ba254f8266b417e3047d278ef6bc7aff01d58010c37"
+      sha256: c271fb05cf83f47ff8d6915ea7fc780381e581309f55846a21a3257ad6b05f6d
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.2"
+    version: "3.4.1"
   pub_semver:
     dependency: transitive
     description:
@@ -341,18 +341,18 @@ packages:
     dependency: "direct main"
     description:
       name: sql_crdt
-      sha256: "943d1d36ab10544747b2fb8f4d6a50b20673babf843bf3d9a7fbef894ad9919b"
+      sha256: ad69a5f258800c8e649b595ab3112501179b9705fbc91282448d91c4a585c51a
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.1"
+    version: "3.0.2"
   sqlparser:
     dependency: transitive
     description:
       name: sqlparser
-      sha256: "7b20045d1ccfb7bc1df7e8f9fee5ae58673fce6ff62cefbb0e0fd7214e90e5a0"
+      sha256: d77749237609784e337ec36c979d41f6f38a7b279df98622ae23929c8eb954a4
       url: "https://pub.dev"
     source: hosted
-    version: "0.34.1"
+    version: "0.39.2"
   stack_trace:
     dependency: transitive
     description:
@@ -429,10 +429,10 @@ packages:
     dependency: transitive
     description:
       name: uuid
-      sha256: cd210a09f7c18cbe5a02511718e0334de6559871052c90a90c0cca46a4aa81c8
+      sha256: a5be9ef6618a7ac1e964353ef476418026db906c4facdedaa299b7a2e71690ff
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.3"
+    version: "4.5.1"
   vm_service:
     dependency: transitive
     description:

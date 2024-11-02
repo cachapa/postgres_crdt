@@ -7,6 +7,7 @@ Future<void> main() async {
   final crdt = await PostgresCrdt.open(
     'testdb',
     username: 'cachapa',
+    password: r'vyFqnUh4m2Av$54&&dX6L7R5&AcL7^',
   );
 
   // Create table
