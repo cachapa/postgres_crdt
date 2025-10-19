@@ -90,12 +90,11 @@ packages:
     source: hosted
     version: "1.13.1"
   crdt:
-    dependency: transitive
+    dependency: "direct main"
     description:
-      name: crdt
-      sha256: "5709bbb4bb6f1b7e08fa1a3896070adec870ed4029c5b5da6fb30fa3c501cb65"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../crdt"
+      relative: true
+    source: path
     version: "5.1.3"
   crypto:
     dependency: transitive
@@ -245,10 +244,10 @@ packages:
     dependency: "direct main"
     description:
       name: postgres
-      sha256: "9aaa6f4872956adef653535a4e2133b167465c1a68c22b9bd0744ef1244e9393"
+      sha256: "96d7f40e079b96cdbfed13d71c64668cfd79c35bc17223c6b3ac0ca63bff72f0"
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.6"
+    version: "3.5.8"
   pub_semver:
     dependency: transitive
     description:
@@ -257,22 +256,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  sasl_scram:
-    dependency: transitive
-    description:
-      name: sasl_scram
-      sha256: a47207a436eb650f8fdcf54a2e2587b850dc3caef9973ce01f332b07a6fc9cb9
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.1"
-  saslprep:
-    dependency: transitive
-    description:
-      name: saslprep
-      sha256: "3d421d10be9513bf4459c17c5e70e7b8bc718c9fc5ad4ba5eb4f5fd27396f740"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.3"
   shelf:
     dependency: transitive
     description:
@@ -337,22 +320,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.0"
-  sql_crdt:
+  sqlparser:
     dependency: "direct main"
     description:
-      name: sql_crdt
-      sha256: db0a4133a63a996d262d7e73b97e6ddc4550f4e3bd2449930627472d622bd946
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.3"
-  sqlparser:
-    dependency: transitive
-    description:
       name: sqlparser
-      sha256: "27dd0a9f0c02e22ac0eb42a23df9ea079ce69b52bb4a3b478d64e0ef34a263ee"
+      sha256: "54eea43e36dd3769274c3108625f9ea1a382f8d2ac8b16f3e4589d9bd9b0e16c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.41.0"
+    version: "0.42.0"
   stack_trace:
     dependency: transitive
     description:
@@ -362,7 +337,7 @@ packages:
     source: hosted
     version: "1.12.1"
   stream_channel:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: stream_channel
       sha256: "969e04c80b8bcdf826f8f16579c7b14d780458bd97f56d107d3950fdbeef059d"
@@ -417,14 +392,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  unorm_dart:
-    dependency: transitive
-    description:
-      name: unorm_dart
-      sha256: "23d8bf65605401a6a32cff99435fed66ef3dab3ddcad3454059165df46496a3b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
   uuid:
     dependency: transitive
     description:
@@ -490,4 +457,4 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.7.0-0 <4.0.0"
+  dart: ">=3.9.0 <4.0.0"
