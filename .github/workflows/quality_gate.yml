@@ -30,8 +30,8 @@ jobs:
         image: postgres
         env:
           POSTGRES_DB: testdb
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: cachapa
+          POSTGRES_PASSWORD: password
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -41,6 +41,14 @@ jobs:
           - 5432:5432
 
     steps:
+#      Switch Postgres to WAL mode
+      - name: Set wal_level to logical
+        run: PGPASSWORD=password psql -h localhost -U cachapa -c "ALTER SYSTEM SET wal_level = 'logical';" testdb
+      - name: Restart Postgres
+        env:
+          PGPASSWORD: "password"
+        run: docker restart $(docker ps -q --filter "ancestor=postgres")
+
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
       - run: dart pub get

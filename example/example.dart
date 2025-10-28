@@ -7,13 +7,16 @@ import 'package:postgres_crdt/postgres_crdt.dart';
 Future<void> main() async {
   // Use regular DB connection to create tables for syncing
   final endpoint = Endpoint(
-      host: 'localhost',
-      database: 'testdb',
-      username: 'cachapa',
-      password: 'password');
+    host: 'localhost',
+    database: 'testdb',
+    username: 'cachapa',
+    password: 'password',
+  );
   final sslMode = SslMode.disable;
-  final db = await Connection.open(endpoint,
-      settings: ConnectionSettings(sslMode: sslMode));
+  final db = await Connection.open(
+    endpoint,
+    settings: ConnectionSettings(sslMode: sslMode),
+  );
 
   await db.execute('DROP TABLE IF EXISTS crdt');
   await db.execute('DROP TABLE IF EXISTS users');
@@ -26,8 +29,11 @@ Future<void> main() async {
   ''');
 
   // Initialize CRDT sync
-  final crdt =
-      await PostgresCrdt.open(endpoint, tables: ['users'], sslMode: sslMode);
+  final crdt = await PostgresCrdt.open(
+    endpoint,
+    tables: ['users'],
+    sslMode: sslMode,
+  );
 
   // Create table
   await crdt.execute('DROP TABLE IF EXISTS users');
@@ -40,10 +46,13 @@ Future<void> main() async {
   ''');
 
   // Insert an entry into the database
-  await crdt.execute(r'''
+  await crdt.execute(
+    r'''
     INSERT INTO users (id, name)
     VALUES ($1, $2)
-  ''', parameters: [1, 'John Doe']);
+  ''',
+    parameters: [1, 'John Doe'],
+  );
 
   // Delete it
   await crdt.execute(r'DELETE FROM users WHERE id = $1', parameters: [1]);
@@ -70,23 +79,32 @@ Future<void> main() async {
       .listen((e) => printRecords('Watch: SELECT id, name FROM users', e));
 
   // Update the database
-  await crdt.execute(r'''
+  await crdt.execute(
+    r'''
     UPDATE users SET name = $1
     WHERE id = $2
-  ''', parameters: ['Jane Doe 👍', 2]);
+  ''',
+    parameters: ['Jane Doe 👍', 2],
+  );
 
   // Perform multiple writes inside a transaction so they get the same timestamp
   await crdt.runTx((tx) async {
     // Make sure you use the transaction object (txn)
     // Using [crdt] here will cause a deadlock
-    await tx.execute(r'''
+    await tx.execute(
+      r'''
       INSERT INTO users (id, name)
       VALUES ($1, $2)
-    ''', parameters: [3, 'Uncle Doe']);
-    await tx.execute(r'''
+    ''',
+      parameters: [3, 'Uncle Doe'],
+    );
+    await tx.execute(
+      r'''
       INSERT INTO users (id, name)
       VALUES ($1, $2)
-    ''', parameters: [4, 'Grandma Doe']);
+    ''',
+      parameters: [4, 'Grandma Doe'],
+    );
   });
 
   // Create a changeset to synchronize with another node

@@ -13,7 +13,7 @@ class PostgresCrdt extends Crdt {
   final Map<String, List<String>> _tableIndexes;
   final Connection _connection;
 
-  final _skipTransactions = <int>{};
+  final _mergeTransactions = <int, DateTime>{};
   final _relations = <int, Relation>{};
   final _watches = <StreamController<Result>, _Query>{};
 
@@ -29,7 +29,7 @@ class PostgresCrdt extends Crdt {
     assert(_tableIndexes.isNotEmpty);
 
     List<Record>? records;
-    final touchedTables = <String>{};
+    final affectedTables = <String>{};
     stream.listen((msg) async {
       // Handle keep alive messages to keep the connection open
       switch (msg) {
@@ -51,10 +51,17 @@ class PostgresCrdt extends Crdt {
 
             case BeginMessage data:
               // Ignore skipped transactions
-              records = _skipTransactions.remove(data.xid) ? null : [];
+              records = _mergeTransactions.containsKey(data.xid) ? null : [];
+              // Cleanup known transactions
+              final now = DateTime.now();
+              _mergeTransactions.removeWhere(
+                (key, value) =>
+                    key == data.xid ||
+                    value.difference(now) > const Duration(minutes: 1),
+              );
 
             case InsertMessage data:
-              touchedTables.add(_relations[data.relationId]!.name);
+              affectedTables.add(_relations[data.relationId]!.name);
               records?.add(
                 Record(
                   _relations[data.relationId]!,
@@ -63,7 +70,7 @@ class PostgresCrdt extends Crdt {
               );
 
             case UpdateMessage data:
-              touchedTables.add(_relations[data.relationId]!.name);
+              affectedTables.add(_relations[data.relationId]!.name);
               records?.add(
                 Record(
                   _relations[data.relationId]!,
@@ -72,7 +79,7 @@ class PostgresCrdt extends Crdt {
               );
 
             case DeleteMessage data:
-              touchedTables.add(_relations[data.relationId]!.name);
+              affectedTables.add(_relations[data.relationId]!.name);
               records?.add(
                 Record(
                   _relations[data.relationId]!,
@@ -82,46 +89,40 @@ class PostgresCrdt extends Crdt {
               );
 
             case CommitMessage data:
-              // Trigger watched queries if those tables were touched
-              final touchedWatches = _watches.entries.where(
-                (e) => e.value.affectedTables
-                    .intersection(touchedTables)
-                    .isNotEmpty,
-              );
-              for (final watch in touchedWatches) {
-                _emitQuery(watch.key, watch.value);
-              }
-              touchedTables.clear();
-
-              // Check if this transaction was skipped
-              if (records == null) return;
-
-              // Bump canonical time
-              canonicalTime = canonicalTime.increment(
-                wallTime: data.commitTime,
-              );
-
-              for (final record in records!) {
-                await _connection.execute(
-                  r'''
-                    INSERT INTO crdt (collection, id, hlc, modified, is_deleted)
-                      VALUES ($1, $2, $3, $4, $5)
-                    ON CONFLICT (collection, id) DO
-                      UPDATE SET
-                        hlc = $3,
-                        modified = $4,
-                        is_deleted = $5
-                    WHERE excluded.hlc > crdt.hlc
-                  ''',
-                  parameters: [
-                    record.table,
-                    record.mergedId,
-                    canonicalTime.toString(),
-                    canonicalTime.toString(),
-                    record.isDeleted,
-                  ],
+              // Check if this transaction part of a merge
+              if (records != null) {
+                // Bump canonical time
+                canonicalTime = canonicalTime.increment(
+                  wallTime: data.commitTime,
                 );
+                // Update crdt table
+                await _connection.runTx((session) async {
+                  for (final record in records!) {
+                    await session.execute(
+                      r'''
+                        INSERT INTO crdt (collection, id, hlc, modified, is_deleted)
+                          VALUES ($1, $2, $3, $4, $5)
+                        ON CONFLICT (collection, id) DO
+                          UPDATE SET
+                            hlc = $3,
+                            modified = $4,
+                            is_deleted = $5
+                        WHERE excluded.hlc > crdt.hlc
+                      ''',
+                      parameters: [
+                        record.table,
+                        record.mergedId,
+                        canonicalTime.toString(),
+                        canonicalTime.toString(),
+                        record.isDeleted,
+                      ],
+                    );
+                  }
+                });
               }
+              // Emit change events
+              _emitQueries(affectedTables);
+              affectedTables.clear();
           }
 
         case ErrorResponseMessage _:
@@ -159,14 +160,14 @@ class PostgresCrdt extends Crdt {
     );
 
     // Create crdt table if necessary
-    connection.execute(r'''
+    await connection.execute(r'''
       CREATE TABLE IF NOT EXISTS crdt (
         collection varchar(255) NOT NULL,
         id varchar(255) NOT NULL,
         hlc varchar(255) NOT NULL,
-        node_id varchar(255) GENERATED ALWAYS AS (SUBSTRING(hlc FROM 'Z-\d+-(.*)$')) STORED,
         modified varchar(255) NOT NULL,
         is_deleted boolean NOT NULL,
+        node_id varchar(255) GENERATED ALWAYS AS (SUBSTRING(hlc FROM 'Z-\d+-(.*)$')) STORED,
         PRIMARY KEY (collection, id)
       )
     ''');
@@ -200,11 +201,11 @@ class PostgresCrdt extends Crdt {
     }
 
     // Get canonical time
-    final canonicalResult = (await connection.execute(
-      'SELECT MAX(modified) AS hlc FROM $crdtTable',
-    ))
-        .first
-        .first as String?;
+    final canonicalResult =
+        (await connection.execute(
+              'SELECT MAX(modified) AS hlc FROM $crdtTable',
+            )).first.first
+            as String?;
     final canonicalTime = canonicalResult == null
         ? Hlc.now(generateNodeId())
         : Hlc.parse(canonicalResult);
@@ -258,16 +259,16 @@ class PostgresCrdt extends Crdt {
   }
 
   @override
-  Future<Hlc> getLastModified({
+  Future<Hlc?> getLastModified({
     String? onlyNodeId,
     String? exceptNodeId,
   }) async {
-    assert((onlyNodeId != null) ^ (exceptNodeId != null));
+    assert(onlyNodeId == null || exceptNodeId == null);
     final whereStatement = onlyNodeId != null
         ? r'WHERE node_id = $1'
         : exceptNodeId != null
-            ? r'WHERE node_id != $1'
-            : '';
+        ? r'WHERE node_id != $1'
+        : '';
     final result = await _connection.execute(
       'SELECT max(modified) AS modified FROM $crdtTable $whereStatement',
       parameters: [
@@ -276,7 +277,7 @@ class PostgresCrdt extends Crdt {
       ],
     );
     final hlcString = result.first.first as String?;
-    return hlcString != null ? Hlc.parse(hlcString) : Hlc.zero(nodeId);
+    return hlcString?.toHlc;
   }
 
   @override
@@ -285,21 +286,20 @@ class PostgresCrdt extends Crdt {
     if (changeset is Map<String, dynamic>) {
       changeset = CrdtChangeset.parse(changeset);
     }
-
-    // Quit if there's nothing to do
+    // Quit early if there's nothing to do
     if (changeset.recordCount == 0) return;
+    // Validate changeset and highest hlc therein
+    final highestHlc = validateChangeset(changeset);
 
     await _connection.runTx((session) async {
-      // Validate changeset and highest hlc therein
-      final highestHlc = validateChangeset(changeset);
-
+      // Avoid reacting to this transaction when writing to the data tables
       final txId =
           (await session.execute('SELECT txid_current()')).first.first as int;
-      _skipTransactions.add(txId);
+      _mergeTransactions[txId] = DateTime.now();
 
       for (final entry in changeset.entries) {
-        final collection = entry.key;
-        final records = entry.value;
+        final table = entry.key;
+        final records = entry.value as List<CrdtRecord>;
 
         for (final record in records) {
           final crdtResult = await session.execute(
@@ -311,13 +311,13 @@ class PostgresCrdt extends Crdt {
                   hlc = \$3,
                   modified = \$4,
                   is_deleted = \$5
-              WHERE excluded.hlc > $crdtTable.hlc
+                WHERE excluded.hlc > $crdtTable.hlc
             ''',
             parameters: [
-              collection,
+              table,
               record.id,
               '${record.hlc}',
-              '$canonicalTime',
+              '$highestHlc',
               record.isDeleted,
             ],
           );
@@ -326,23 +326,23 @@ class PostgresCrdt extends Crdt {
           if (crdtResult.affectedRows > 0) {
             if (record.isDeleted) {
               var i = 1;
-              final whereClause = _tableIndexes[collection]!
+              final whereClause = _tableIndexes[table]!
                   .map((e) => '$e = \$${i++}')
                   .join(', ');
               await session.execute('''
-                  DELETE FROM $collection
+                  DELETE FROM $table
                   WHERE $whereClause
                 ''', parameters: record.id.split('::'));
             } else {
               final data = record.data!;
               final updateStatement = data.keys
-                  .where((e) => !_tableIndexes[collection]!.contains(e))
+                  .where((e) => !_tableIndexes[table]!.contains(e))
                   .map((e) => '$e = \$${data.keys.toList().indexOf(e) + 1}')
                   .join(',\n');
               await session.execute('''
-                INSERT INTO $collection (${data.keys.join(', ')})
+                INSERT INTO $table (${data.keys.join(', ')})
                   VALUES (${List.generate(data.length, (i) => '\$${i + 1}').join(', ')})
-                ON CONFLICT (${_tableIndexes[collection]!.join(', ')}) DO
+                ON CONFLICT (${_tableIndexes[table]!.join(', ')}) DO
                   UPDATE SET $updateStatement
               ''', parameters: data.values.toList());
             }
@@ -368,24 +368,27 @@ class PostgresCrdt extends Crdt {
       final concatenatedIds = _tableIndexes[table]!
           .map((column) => '$table.$column::varchar(255)')
           .join(" || '::' || ");
-      changeset[table] = (await _connection.execute(
-        '''
+      changeset[table] =
+          (await _connection.execute(
+                '''
           SELECT $crdtTable.id AS _id, $crdtTable.hlc AS _hlc, $table.* FROM $crdtTable
           LEFT JOIN $table ON $concatenatedIds = $crdtTable.id
           WHERE $crdtTable.collection = \$1
         ''',
-        parameters: [table],
-      ))
-          .map((row) => row.toColumnMap())
-          .map((e) => {
-                'id': e['_id'],
-                'hlc': e['_hlc'],
-                'data': e[_tableIndexes[table]!.first] == null
-                    ? null
-                    : (e
-                      ..remove('_id')
-                      ..remove('_hlc'))
-              });
+                parameters: [table],
+              ))
+              .map((row) => row.toColumnMap())
+              .map(
+                (e) => {
+                  'id': e['_id'],
+                  'hlc': e['_hlc'],
+                  'data': e[_tableIndexes[table]!.first] == null
+                      ? null
+                      : (e
+                          ..remove('_id')
+                          ..remove('_hlc')),
+                },
+              );
     }
 
     return CrdtChangeset.parse(changeset);
@@ -398,13 +401,18 @@ class PostgresCrdt extends Crdt {
     QueryMode? queryMode,
     Duration? timeout,
   }) async {
-    return _connection.execute(
-      query,
-      parameters: parameters,
-      ignoreRows: ignoreRows,
-      queryMode: queryMode,
-      timeout: timeout,
-    );
+    try {
+      return _connection.execute(
+        query,
+        parameters: parameters,
+        ignoreRows: ignoreRows,
+        queryMode: queryMode,
+        timeout: timeout,
+      );
+    } catch (e) {
+      print(query);
+      rethrow;
+    }
   }
 
   Future<R> runTx<R>(
@@ -437,6 +445,16 @@ class PostgresCrdt extends Crdt {
     );
 
     return controller.stream;
+  }
+
+  void _emitQueries(Set<String> affectedTables) {
+    // Trigger watched queries for all affected tables
+    final affectedWatches = _watches.entries.where(
+      (e) => e.value.affectedTables.intersection(affectedTables).isNotEmpty,
+    );
+    for (final watch in affectedWatches) {
+      unawaited(_emitQuery(watch.key, watch.value));
+    }
   }
 
   Future<void> _emitQuery(
@@ -500,11 +518,11 @@ class Relation {
   final List<int> indexPositions;
 
   Relation(RelationMessage msg)
-      : name = msg.relationName,
-        indexPositions = msg.columns
-            .where((e) => e.flags == 1)
-            .map((e) => msg.columns.indexOf(e))
-            .toList();
+    : name = msg.relationName,
+      indexPositions = msg.columns
+          .where((e) => e.flags == 1)
+          .map((e) => msg.columns.indexOf(e))
+          .toList();
 }
 
 class Record {
@@ -515,11 +533,11 @@ class Record {
   String get mergedId => ids.join('::');
 
   Record(Relation relation, List<Object?> values, {this.isDeleted = false})
-      : table = relation.name,
-        ids = relation.indexPositions
-            .map((i) => values[i])
-            .toList()
-            .cast<Object>();
+    : table = relation.name,
+      ids = relation.indexPositions
+          .map((i) => values[i])
+          .toList()
+          .cast<Object>();
 
   @override
   String toString() => '${isDeleted ? 'DEL' : 'SET'} $table::$mergedId';
