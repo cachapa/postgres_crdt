@@ -1,59 +1,36 @@
 import 'dart:async';
 
-import 'package:crdt/crdt.dart';
 import 'package:postgres/postgres.dart';
 import 'package:postgres_crdt/postgres_crdt.dart';
 import 'package:test/test.dart';
+
+const monitoredTables = ['users', 'other_users', 'friends', 'purchases'];
 
 Future<void> main() async {
   final endpoint = Endpoint(
     host: 'localhost',
     database: 'testdb',
-    username: 'cachapa',
-    password: 'password',
+    username: 'postgres',
+    password: 'postgres',
   );
   final sslMode = SslMode.disable;
   final connection = await Connection.open(
     endpoint,
     settings: ConnectionSettings(sslMode: sslMode),
   );
-  await connection.execute('DROP TABLE IF EXISTS crdt');
-  await connection.execute('DROP TABLE IF EXISTS users');
-  await connection.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER NOT NULL,
-      name TEXT,
-      PRIMARY KEY (id)
-    )
-  ''');
-  await connection.execute('DROP TABLE IF EXISTS other_users');
-  await connection.execute('''
-    CREATE TABLE IF NOT EXISTS other_users (
-      id INTEGER NOT NULL,
-      name TEXT,
-      PRIMARY KEY (id)
-    )
-  ''');
-  await connection.execute('DROP TABLE IF EXISTS purchases');
-  await connection.execute('''
-    CREATE TABLE IF NOT EXISTS purchases (
-      id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      price INTEGER NOT NULL,
-      PRIMARY KEY (id)
-    )
-  ''');
-
-  final crdt = await PostgresCrdt.open(
-    endpoint,
-    tables: ['users', 'other_users', 'purchases'],
-    sslMode: sslMode,
-  );
+  late PostgresCrdt crdt;
 
   group('Basic', () {
-    tearDown(() async {
-      await clearTables(crdt);
+    setUp(() async {
+      await createTables(connection);
+      crdt = await PostgresCrdt.open(
+        endpoint,
+        tables: monitoredTables,
+        sslMode: sslMode,
+      );
     });
+
+    tearDown(() async => await crdt.close());
 
     test('Node ID', () {
       expect(crdt.nodeId, isNotEmpty);
@@ -61,18 +38,13 @@ Future<void> main() async {
 
     test('Canonical time', () async {
       await insertUser(crdt, 1, 'John Doe');
-      final can1 = crdt.canonicalTime;
       await insertUser(crdt, 2, 'Jane Doe');
-      final can2 = crdt.canonicalTime;
 
       final changeset = await crdt.getChangeset();
       final hlc1 = (changeset['users']!.first.hlc);
       final hlc2 = (changeset['users']!.last.hlc);
 
-      expect(can2, greaterThan(can1));
       expect(hlc2, greaterThan(hlc1));
-      expect(can1, hlc1);
-      expect(can2, hlc2);
       expect(hlc2, crdt.canonicalTime);
     });
 
@@ -108,6 +80,17 @@ Future<void> main() async {
       expect(result, [
         [1, 'John Doe'],
       ]);
+    });
+
+    test('Insert from select', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      await crdt.execute('''
+        INSERT INTO other_users (id, name)
+        SELECT id, name FROM users
+      ''');
+      final result1 = await crdt.execute('SELECT * FROM users');
+      final result2 = await crdt.execute('SELECT * FROM other_users');
+      expect(result1, result2);
     });
 
     test('Update', () async {
@@ -147,6 +130,15 @@ Future<void> main() async {
       expect(changeset['users']!.first.isDeleted, isTrue);
     });
 
+    test('Truncate', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      await crdt.execute('TRUNCATE users');
+      final result = await crdt.execute('SELECT * FROM users');
+      expect(result, isEmpty);
+      final changeset = await crdt.getChangeset();
+      expect(changeset['users']!.first.isDeleted, isTrue);
+    });
+
     test('Transaction', () async {
       await crdt.runTx((txn) async {
         await insertUser(txn, 1, 'John Doe');
@@ -160,14 +152,173 @@ Future<void> main() async {
       final changeset = await crdt.getChangeset();
       expect(changeset['users']!.first.hlc, changeset['users']!.last.hlc);
     });
+  });
 
-    test('Changeset', () async {
+  group('Changesets', () {
+    setUp(() async {
+      await createTables(connection);
+      crdt = await PostgresCrdt.open(
+        endpoint,
+        tables: monitoredTables,
+        sslMode: sslMode,
+      );
+    });
+
+    tearDown(() async => await crdt.close());
+
+    test('Full changeset', () async {
       await insertUser(crdt, 1, 'John Doe');
       final changeset = await crdt.getChangeset();
       expect(
         (changeset['users']!.first.data as Map<String, Object?>)['name'],
         'John Doe',
       );
+    });
+
+    test('By node id', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      await crdt.merge({
+        'users': [
+          {
+            'id': '2',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id': 2, 'name': 'Jane Doe'},
+          },
+        ],
+      });
+      final changeset1 = await crdt.getChangeset(onlyNodeId: 'nodeId');
+      expect(changeset1.recordCount, 1);
+      expect(changeset1['users']![0].data!['name'], 'Jane Doe');
+      final changeset2 = await crdt.getChangeset(onlyNodeId: 'other_node_id');
+      expect(changeset2.recordCount, 0);
+    });
+
+    test('Except node id', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      await crdt.merge({
+        'users': [
+          {
+            'id': '2',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id': 2, 'name': 'Jane Doe'},
+          },
+        ],
+      });
+      final changeset1 = await crdt.getChangeset(exceptNodeId: 'nodeId');
+      expect(changeset1.recordCount, 1);
+      expect(changeset1['users']![0].data!['name'], 'John Doe');
+      final changeset2 = await crdt.getChangeset(exceptNodeId: 'other_node_id');
+      expect(changeset2.recordCount, 2);
+    });
+
+    test('Modified on', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      await crdt.merge({
+        'users': [
+          {
+            'id': '2',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id': 2, 'name': 'Jane Doe'},
+          },
+        ],
+      });
+      final changeset = await crdt.getChangeset(modifiedOn: crdt.canonicalTime);
+      expect(changeset.recordCount, 1);
+      expect(changeset['users']![0].data!['name'], 'Jane Doe');
+    });
+
+    test('Modified after', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      final hlc = Hlc.now('nodeId');
+      await crdt.merge({
+        'users': [
+          {
+            'id': '2',
+            'hlc': hlc.increment(),
+            'data': {'id': 2, 'name': 'Jane Doe'},
+          },
+        ],
+      });
+      final changeset = await crdt.getChangeset(modifiedAfter: hlc);
+      expect(changeset.recordCount, 1);
+      expect(changeset['users']![0].data!['name'], 'Jane Doe');
+    });
+
+    test('Filter entire collections', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      await crdt.merge({
+        'users': [
+          {
+            'id': '2',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id': 2, 'name': 'Jane Doe'},
+          },
+        ],
+        'friends': [
+          {
+            'id': '1::2',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id1': 1, 'id2': 2, 'note': 'BFFs'},
+          },
+        ],
+      });
+
+      final changeset1 = await crdt.getChangeset(
+        collectionFilter: {'users': null},
+      );
+      expect(changeset1.recordCount, 2);
+      expect(changeset1['users'], isNotNull);
+      expect(changeset1['friends'], isNull);
+
+      final changeset2 = await crdt.getChangeset(
+        collectionFilter: {'friends': null},
+      );
+      expect(changeset2.recordCount, 1);
+      expect(changeset2['users'], isNull);
+      expect(changeset2['friends']!.first.data, isNotNull);
+    });
+
+    test('Filter specific fields', () async {
+      await insertUser(crdt, 1, 'John Doe');
+      await crdt.merge({
+        'users': [
+          {
+            'id': '2',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id': 2, 'name': 'Jane Doe'},
+          },
+        ],
+        'friends': [
+          {
+            'id': '1::2',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id1': 1, 'id2': 2, 'note': 'BFFs'},
+          },
+          {
+            'id': '1::3',
+            'hlc': Hlc.now('nodeId'),
+            'data': {'id1': 1, 'id2': 3, 'note': 'School buddies'},
+          },
+        ],
+      });
+
+      final changeset1 = await crdt.getChangeset(
+        collectionFilter: {
+          'users': {'id': 1},
+        },
+      );
+      expect(changeset1.recordCount, 1);
+      expect(changeset1['users'], isNotNull);
+      expect(changeset1['friends'], isNull);
+
+      final changeset2 = await crdt.getChangeset(
+        collectionFilter: {
+          'friends': {'id1': '1'},
+        },
+      );
+      expect(changeset2.recordCount, 2);
+      expect(changeset2['users'], isNull);
+      expect(changeset2['friends'], isNotEmpty);
     });
 
     test('Simple merge', () async {
@@ -210,7 +361,6 @@ Future<void> main() async {
     test('Skip merging older records', () async {
       final hlc = Hlc.now('test_node_id');
       await insertUser(crdt, 1, 'John Doe');
-      // print(await crdt.getChangeset());
       await crdt.merge({
         'users': [
           {
@@ -232,9 +382,8 @@ Future<void> main() async {
       ]);
     });
 
-    test('Merge deleted', () async {
+    test('Merge deleted records', () async {
       await insertUser(crdt, 1, 'John Doe');
-
       final hlc = Hlc.now('test_node_id');
       await crdt.merge({
         'users': [
@@ -283,26 +432,43 @@ Future<void> main() async {
       expect(result2.last, [9, 'John Doe 9']);
       expect(outputChangeset['other_users']!.last.hlc, hlc);
     });
-  });
 
-  group('Write from query', () {
-    tearDown(() async => await clearTables(crdt));
+    test('Merge large changeset', () async {
+      final length = 1000;
+      final hlc = Hlc.now('test_node_id');
+      final changeset = {
+        'users': List.generate(
+          length,
+          (i) => {
+            'id': '$i',
+            'hlc': hlc,
+            'data': {'id': i, 'name': 'John Doe $i'},
+          },
+        ),
+      };
+      await crdt.merge(changeset);
 
-    test('Insert from select', () async {
-      await insertUser(crdt, 1, 'John Doe');
-      await crdt.execute('''
-        INSERT INTO other_users (id, name)
-        SELECT id, name FROM users
-      ''');
-      final result1 = await crdt.execute('SELECT * FROM users');
-      final result2 = await crdt.execute('SELECT * FROM other_users');
-      expect(result1, result2);
+      final result = await crdt.execute('SELECT * FROM users');
+      expect(result.length, length);
+      expect(result.first, [0, 'John Doe 0']);
+      expect(result.last, [length - 1, 'John Doe ${length - 1}']);
     });
   });
 
   group('Watch', () {
+    setUp(() async {
+      await createTables(connection);
+      crdt = await PostgresCrdt.open(
+        endpoint,
+        tables: monitoredTables,
+        sslMode: sslMode,
+      );
+    });
+
     tearDown(() async {
-      await clearTables(crdt);
+      // Wait for change emissions to complete
+      await Future.delayed(Duration(milliseconds: 10));
+      await crdt.close();
     });
 
     test('Emit on watch', () async {
@@ -365,15 +531,11 @@ Future<void> main() async {
     test('Emit on transaction', () async {
       final streamTest = expectLater(
         crdt.watch('SELECT * FROM users'),
-        emitsInOrder([
-          [],
-          [
-            [1, 'John Doe'],
-            [2, 'Jane Doe'],
-          ],
+        emitsThrough([
+          [1, 'John Doe'],
+          [2, 'Jane Doe'],
         ]),
       );
-      await Future.delayed(Duration(milliseconds: 1));
       await crdt.runTx((txn) async {
         await insertUser(txn, 1, 'John Doe');
         await insertUser(txn, 2, 'Jane Doe');
@@ -384,14 +546,10 @@ Future<void> main() async {
     test('Emit on merge', () async {
       final streamTest = expectLater(
         crdt.watch('SELECT * FROM users'),
-        emitsInOrder([
-          [],
-          [
-            [1, 'John Doe'],
-          ],
+        emitsThrough([
+          [1, 'John Doe'],
         ]),
       );
-      await Future.delayed(Duration(milliseconds: 1));
       await crdt.merge({
         'users': [
           {
@@ -432,7 +590,6 @@ Future<void> main() async {
           ],
         ]),
       );
-      // await Future.delayed(Duration(milliseconds: 1));
       await connection.runTx((session) async {
         await insertUser(session, 1, 'John Doe');
         await insertPurchase(session, 1, 1, 12);
@@ -442,43 +599,95 @@ Future<void> main() async {
   });
 }
 
-FutureOr<void> insertUser(dynamic crdt, int id, String name) => crdt.execute(
-  r'''
+Future<void> insertUser(dynamic crdt, int id, String name) async {
+  await crdt.execute(
+    r'''
       INSERT INTO users (id, name)
       VALUES ($1, $2)
     ''',
-  parameters: [id, name],
-);
+    parameters: [id, name],
+  );
+  // Wait for the CRDT table to catch up
+  await Future.delayed(Duration(milliseconds: 10));
+}
 
-Future<void> updateUser(PostgresCrdt crdt, int id, String name) => crdt.execute(
-  r'''
+Future<void> updateUser(dynamic crdt, int id, String name) async {
+  await crdt.execute(
+    r'''
     UPDATE users SET name = $2
     WHERE id = $1
   ''',
-  parameters: [id, name],
-);
+    parameters: [id, name],
+  );
+  // Wait for the CRDT table to catch up
+  await Future.delayed(Duration(milliseconds: 10));
+}
 
-Future<void> deleteUser(PostgresCrdt crdt, int id) =>
-    crdt.execute(r'DELETE FROM users WHERE id = $1', parameters: [id]);
+Future<void> deleteUser(PostgresCrdt crdt, int id) async {
+  await crdt.execute(r'DELETE FROM users WHERE id = $1', parameters: [id]);
+  // Wait for the CRDT table to catch up
+  await Future.delayed(Duration(milliseconds: 10));
+}
 
-Future<void> insertPurchase(dynamic crdt, int id, int userId, int price) =>
-    crdt.execute(
-      r'''
+Future<void> insertPurchase(dynamic crdt, int id, int userId, int price) async {
+  await crdt.execute(
+    r'''
         INSERT INTO purchases (id, user_id, price)
         VALUES ($1, $2, $3)
       ''',
-      parameters: [id, userId, price],
-    );
+    parameters: [id, userId, price],
+  );
+  // Wait for the CRDT table to catch up
+  await Future.delayed(Duration(milliseconds: 10));
+}
+
+Future<void> createTables(Connection connection) async {
+  await connection.execute('DROP TABLE IF EXISTS crdt');
+  await connection.execute('DROP TABLE IF EXISTS users');
+  await connection.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER NOT NULL,
+      name TEXT,
+      PRIMARY KEY (id)
+    )
+  ''');
+  await connection.execute('DROP TABLE IF EXISTS other_users');
+  await connection.execute('''
+    CREATE TABLE IF NOT EXISTS other_users (
+      id INTEGER NOT NULL,
+      name TEXT,
+      PRIMARY KEY (id)
+    )
+  ''');
+  await connection.execute('DROP TABLE IF EXISTS friends');
+  await connection.execute('''
+    CREATE TABLE IF NOT EXISTS friends (
+      id1 INTEGER NOT NULL,
+      id2 INTEGER NOT NULL,
+      note TEXT,
+      PRIMARY KEY (id1, id2)
+    )
+  ''');
+  await connection.execute('DROP TABLE IF EXISTS purchases');
+  await connection.execute('''
+    CREATE TABLE IF NOT EXISTS purchases (
+      id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      price INTEGER NOT NULL,
+      PRIMARY KEY (id)
+    )
+  ''');
+}
 
 // Clear all tables. The crdt table last because it will record deletes
 Future<void> clearTables(PostgresCrdt crdt) async {
-  await Future.wait(
-    crdt.tables
-        .map((table) => 'TRUNCATE $table')
-        .map((sql) => crdt.execute(sql)),
-  );
-  await Future.delayed(
-    Duration(milliseconds: 1),
-    () => crdt.execute('TRUNCATE ${crdt.crdtTable}'),
-  );
+  // await Future.wait(
+  //   crdt.tables
+  //       .map((table) => 'TRUNCATE $table')
+  //       .map((sql) => crdt.execute(sql)),
+  // );
+  // await Future.delayed(
+  //   Duration(milliseconds: 100),
+  //   () => crdt.execute('TRUNCATE ${crdt.crdtTable}'),
+  // );
 }

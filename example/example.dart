@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:crdt/crdt.dart';
 import 'package:postgres/postgres.dart';
 import 'package:postgres_crdt/postgres_crdt.dart';
 
@@ -9,8 +6,8 @@ Future<void> main() async {
   final endpoint = Endpoint(
     host: 'localhost',
     database: 'testdb',
-    username: 'cachapa',
-    password: 'password',
+    username: 'postgres',
+    password: 'postgres',
   );
   final sslMode = SslMode.disable;
   final db = await Connection.open(
@@ -34,16 +31,6 @@ Future<void> main() async {
     tables: ['users'],
     sslMode: sslMode,
   );
-
-  // Create table
-  await crdt.execute('DROP TABLE IF EXISTS users');
-  await crdt.execute('''
-    CREATE TABLE users (
-      id INTEGER NOT NULL,
-      name TEXT,
-      PRIMARY KEY (id)
-    )
-  ''');
 
   // Insert an entry into the database
   await crdt.execute(
@@ -81,10 +68,10 @@ Future<void> main() async {
   // Update the database
   await crdt.execute(
     r'''
-    UPDATE users SET name = $1
-    WHERE id = $2
-  ''',
-    parameters: ['Jane Doe 👍', 2],
+      UPDATE users SET name = $1
+      WHERE id = $2
+    ''',
+    parameters: ['Jane Doe', 2],
   );
 
   // Perform multiple writes inside a transaction so they get the same timestamp
@@ -93,16 +80,16 @@ Future<void> main() async {
     // Using [crdt] here will cause a deadlock
     await tx.execute(
       r'''
-      INSERT INTO users (id, name)
-      VALUES ($1, $2)
-    ''',
+        INSERT INTO users (id, name)
+        VALUES ($1, $2)
+      ''',
       parameters: [3, 'Uncle Doe'],
     );
     await tx.execute(
       r'''
-      INSERT INTO users (id, name)
-      VALUES ($1, $2)
-    ''',
+        INSERT INTO users (id, name)
+        VALUES ($1, $2)
+      ''',
       parameters: [4, 'Grandma Doe'],
     );
   });
@@ -118,7 +105,9 @@ Future<void> main() async {
     }
   });
 
-  exit(0);
+  crdt.watch('SELECT * FROM users').listen(print);
+
+  // exit(0);
 }
 
 void printRecords(String title, Result records) {

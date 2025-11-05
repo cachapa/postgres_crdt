@@ -94,7 +94,7 @@ packages:
     description:
       path: "."
       ref: v6
-      resolved-ref: f1937139274309b8e01a024b174a70961610c762
+      resolved-ref: "0a3bbe0e7276bd35de99eb0cdfb55fe0a6b89f16"
       url: "https://github.com/cachapa/crdt.git"
     source: git
     version: "6.0.0"

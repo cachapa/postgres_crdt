@@ -10,7 +10,7 @@ environment:
 
 dependencies:
   crdt: #^6.0.0
-    #path: ../crdt
+#    path: ../crdt
     git:
       url: https://github.com/cachapa/crdt.git
       ref: v6
